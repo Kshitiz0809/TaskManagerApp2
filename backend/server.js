@@ -18,6 +18,38 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
+// Database initialization endpoint (call once after deployment)
+app.get('/api/init-db', async (req, res) => {
+  try {
+    // Create todos table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS todos (
+        id SERIAL PRIMARY KEY,
+        text VARCHAR(500) NOT NULL,
+        completed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create index if it doesn't exist
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at DESC)
+    `);
+    
+    res.json({ 
+      success: true, 
+      message: 'Database initialized successfully!' 
+    });
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // GET all todos
 app.get('/api/todos', async (req, res) => {
   try {
